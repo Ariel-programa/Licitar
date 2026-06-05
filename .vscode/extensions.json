@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-vscode-remote.remote-containers",
+    "ms-azuretools.vscode-docker",
+    "pkief.material-icon-theme",
+    "eamodio.gitlens"
+  ]
+}

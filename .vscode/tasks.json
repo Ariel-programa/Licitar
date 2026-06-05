@@ -1,0 +1,34 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Docker: Up",
+      "type": "shell",
+      "command": "docker compose up -d --build",
+      "group": "build",
+      "presentation": { "reveal": "always" }
+    },
+    {
+      "label": "Docker: Down",
+      "type": "shell",
+      "command": "docker compose down",
+      "group": "build"
+    },
+    {
+      "label": "Backend: Migrate",
+      "type": "shell",
+      "command": "docker compose exec backend python manage.py migrate"
+    },
+    {
+      "label": "Backend: Tests",
+      "type": "shell",
+      "command": "cd backend && pytest",
+      "group": "test"
+    },
+    {
+      "label": "Frontend: Dev",
+      "type": "shell",
+      "command": "cd frontend && npm run dev"
+    }
+  ]
+}
