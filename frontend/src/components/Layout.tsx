@@ -1,17 +1,20 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FileText, Bell, LogOut } from "lucide-react";
+import { LayoutDashboard, FileText, Bell, LogOut, Users, Star, User } from "lucide-react";
 import { useAuthStore } from "@/lib/authStore";
 import clsx from "clsx";
-
-const nav = [
-  { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { to: "/licitaciones", icon: FileText, label: "Licitaciones" },
-  { to: "/alertas", icon: Bell, label: "Alertas" },
-];
+import Notificaciones from "./Notificaciones";
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  const nav = [
+    { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/licitaciones", icon: FileText, label: "Licitaciones" },
+    { to: "/favoritos", icon: Star, label: "Favoritos" },
+    { to: "/alertas", icon: Bell, label: "Alertas" },
+    ...(user?.role === "admin" ? [{ to: "/usuarios", icon: Users, label: "Usuarios" }] : []),
+  ];
 
   const handleLogout = () => {
     logout();
@@ -20,11 +23,10 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-6 border-b border-gray-200">
           <h1 className="text-xl font-bold text-primary-700">LicitAR</h1>
-          <p className="text-xs text-gray-500 mt-1">Licitaciones públicas de salud</p>
+          <p className="text-xs text-gray-500 mt-1">Licitaciones publicas de salud</p>
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {nav.map(({ to, icon: Icon, label }) => (
@@ -46,20 +48,31 @@ export default function Layout() {
           ))}
         </nav>
         <div className="p-4 border-t border-gray-200">
-          <p className="text-xs text-gray-500 mb-2 truncate">{user?.email}</p>
+          <button
+            onClick={() => navigate("/perfil")}
+            className="flex items-center gap-2 w-full mb-3 text-sm text-gray-600 hover:text-primary-600 transition-colors"
+          >
+            <User size={16} />
+            <div className="text-left">
+              <p className="truncate">{user?.email}</p>
+              <p className="text-xs text-gray-400 capitalize">{user?.role}</p>
+            </div>
+          </button>
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 text-sm text-gray-600 hover:text-red-600 transition-colors"
           >
-            <LogOut size={16} /> Cerrar sesión
+            <LogOut size={16} /> Cerrar sesion
           </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 overflow-auto">
-        <Outlet />
-      </main>
+     <main className="flex-1 overflow-auto">
+  <div className="h-12 bg-white border-b border-gray-200 flex items-center justify-end px-6">
+    <Notificaciones />
+  </div>
+  <Outlet />
+</main>
     </div>
   );
 }

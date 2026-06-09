@@ -1,19 +1,24 @@
-from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
+from rest_framework import viewsets, permissions
 from .models import Licitacion, FuenteScraping, Favorito
 from .serializers import LicitacionSerializer, FuenteSerializer, FavoritoSerializer
 from .filters import LicitacionFilter
 
 
-class LicitacionViewSet(viewsets.ReadOnlyModelViewSet):
+class IsAnalystOrAdmin(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return request.user.is_authenticated
+        return request.user.is_authenticated and request.user.role in ("admin", "analyst")
+
+
+class LicitacionViewSet(viewsets.ModelViewSet):
     queryset = Licitacion.objects.select_related("fuente").all()
     serializer_class = LicitacionSerializer
-    permission_classes = [permissions.IsAuthenticated]
     filterset_class = LicitacionFilter
     search_fields = ["titulo", "descripcion", "organismo", "numero_expediente"]
     ordering_fields = ["fecha_publicacion", "fecha_apertura", "monto_estimado", "created_at"]
     ordering = ["-fecha_publicacion"]
+    permission_classes = [IsAnalystOrAdmin]
 
     def get_serializer_context(self):
         return {"request": self.request}

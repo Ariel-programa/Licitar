@@ -21,7 +21,10 @@ export const getLicitacion = async (id: number): Promise<Licitacion> => {
 
 export const toggleFavorito = async (licitacionId: number, esFavorito: boolean) => {
   if (esFavorito) {
-    await api.delete(`/licitaciones/favoritos/${licitacionId}/`);
+    const { data } = await api.get(`/licitaciones/favoritos/?licitacion_id=${licitacionId}`);
+    if (data.results?.length > 0) {
+      await api.delete(`/licitaciones/favoritos/${data.results[0].id}/`);
+    }
   } else {
     await api.post("/licitaciones/favoritos/", { licitacion_id: licitacionId });
   }

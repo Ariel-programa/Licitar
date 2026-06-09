@@ -8,23 +8,25 @@ from .services import guardar_licitacion, scrape_url_basico
 logger = logging.getLogger(__name__)
 
 
+from .services import scrape_comprar
+
 @shared_task(bind=True, max_retries=3)
 def ejecutar_scraping(self, fuente_id: int):
-    """Task principal de scraping. Delega lógica al service layer."""
     try:
         fuente = FuenteScraping.objects.get(id=fuente_id, activa=True)
     except FuenteScraping.DoesNotExist:
-        logger.warning(f"Fuente {fuente_id} no existe o está inactiva")
         return
 
     job = ScrapingJob.objects.create(fuente=fuente, estado=ScrapingJob.Estado.CORRIENDO, iniciado_en=datetime.now())
 
     try:
-        soup = scrape_url_basico(fuente.url_base)
-        if not soup:
-            raise Exception("No se pudo obtener el HTML")
+        if "comprar.gob.ar" in fuente.url_base:
+            resultado = scrape_comprar(fuente)
+        else:
+            raise Exception(f"No hay scraper para {fuente.url_base}")
 
-        # TODO: implementar parser específico por fuente
+        job.total_nuevos = resultado["nuevas"]
+        job.total_duplicados = resultado["duplicados"]
         job.estado = ScrapingJob.Estado.COMPLETADO
         job.finalizado_en = datetime.now()
         job.save()

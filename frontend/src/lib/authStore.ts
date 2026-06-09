@@ -19,3 +19,8 @@ export const useAuthStore = create<AuthState>()(
     { name: "licitar-auth" }
   )
 );
+
+export const useIsEditor = () => {
+  const user = useAuthStore((s) => s.user);
+  return user?.role === "admin" || user?.role === "analyst";
+};

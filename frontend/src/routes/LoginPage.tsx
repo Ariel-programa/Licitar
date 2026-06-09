@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/lib/authStore";
 import { login } from "@/services/auth";
@@ -65,6 +65,10 @@ export default function LoginPage() {
           >
             {isPending ? "Ingresando..." : "Ingresar"}
           </button>
+
+          <p className="text-center text-sm text-gray-500 mt-4">
+  ¿No tenés cuenta? <Link to="/register" className="text-primary-600 hover:underline">Registrate</Link>
+</p>
         </form>
       </div>
     </div>
