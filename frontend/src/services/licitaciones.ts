@@ -6,6 +6,14 @@ export interface LicitacionFiltros {
   estado?: string;
   provincia?: string;
   rubro?: string;
+  fuente?: number | string;
+  fecha_publicacion_desde?: string;
+  fecha_publicacion_hasta?: string;
+  fecha_apertura_desde?: string;
+  fecha_apertura_hasta?: string;
+  monto_min?: string;
+  monto_max?: string;
+  ordering?: string;
   page?: number;
 }
 

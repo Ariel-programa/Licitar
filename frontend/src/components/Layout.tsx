@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, FileText, Bell, LogOut, Users, Star, User } from "lucide-react";
+import { LayoutDashboard, FileText, Bell, LogOut, Users, Star, User, Database } from "lucide-react";
 import { useAuthStore } from "@/lib/authStore";
 import clsx from "clsx";
 import Notificaciones from "./Notificaciones";
@@ -10,6 +10,7 @@ export default function Layout() {
 
   const nav = [
     { to: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/resultados", icon: Database, label: "Resultados scraping" },
     { to: "/licitaciones", icon: FileText, label: "Licitaciones" },
     { to: "/favoritos", icon: Star, label: "Favoritos" },
     { to: "/alertas", icon: Bell, label: "Alertas" },

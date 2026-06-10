@@ -3,12 +3,10 @@ from datetime import datetime
 from celery import shared_task
 from apps.licitaciones.models import FuenteScraping
 from .models import ScrapingJob
-from .services import guardar_licitacion, scrape_url_basico
+from .services import scrape_comprar, scrape_buenosairescompras, scrape_url_basico
 
 logger = logging.getLogger(__name__)
 
-
-from .services import scrape_comprar
 
 @shared_task(bind=True, max_retries=3)
 def ejecutar_scraping(self, fuente_id: int):
@@ -17,16 +15,24 @@ def ejecutar_scraping(self, fuente_id: int):
     except FuenteScraping.DoesNotExist:
         return
 
-    job = ScrapingJob.objects.create(fuente=fuente, estado=ScrapingJob.Estado.CORRIENDO, iniciado_en=datetime.now())
+    job = ScrapingJob.objects.create(
+        fuente=fuente,
+        estado=ScrapingJob.Estado.CORRIENDO,
+        iniciado_en=datetime.now(),
+    )
 
     try:
-        if "comprar.gob.ar" in fuente.url_base:
+        url = fuente.url_base.lower()
+        if "comprar.gob.ar" in url:
             resultado = scrape_comprar(fuente)
+        elif "buenosairescompras.gob.ar" in url:
+            resultado = scrape_buenosairescompras(fuente)
         else:
-            raise Exception(f"No hay scraper para {fuente.url_base}")
+            resultado = scrape_url_basico(fuente)
 
         job.total_nuevos = resultado["nuevas"]
         job.total_duplicados = resultado["duplicados"]
+        job.total_encontrados = resultado["nuevas"] + resultado["duplicados"] + resultado.get("omitidas", 0)
         job.estado = ScrapingJob.Estado.COMPLETADO
         job.finalizado_en = datetime.now()
         job.save()

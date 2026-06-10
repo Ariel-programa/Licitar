@@ -12,6 +12,7 @@ import DetalleLicitacionPage from "./routes/DetalleLicitacionPage";
 import UsuariosPage from "./routes/UsuariosPage";
 import PerfilPage from "./routes/PerfilPage";
 import FavoritosPage from "./routes/FavoritosPage";
+import ResultadosScrapingPage from "./routes/ResultadosScrapingPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="licitaciones/nueva" element={<NuevaLicitacionPage />} />
           <Route path="licitaciones/:id/editar" element={<EditarLicitacionPage />} />
           <Route path="licitaciones/:id" element={<DetalleLicitacionPage />} />
+          <Route path="resultados" element={<ResultadosScrapingPage />} />
           <Route path="alertas" element={<AlertasPage />} />
           <Route path="favoritos" element={<FavoritosPage />} />
           <Route path="perfil" element={<PerfilPage />} />
