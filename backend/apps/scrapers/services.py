@@ -72,81 +72,146 @@ def guardar_licitacion(data: dict, fuente: FuenteScraping) -> tuple:
 
 
 def scrape_comprar(fuente: FuenteScraping) -> dict:
-    """Scraper de COMPR.AR usando Playwright para cargar JavaScript."""
+    """
+    Scraper de COMPR.AR - ASP.NET WebForms con paginación por postback.
+
+    Columnas reales: Número de Proceso | Nombre | Tipo | Fecha Apertura | Estado | Unidad Ejecutora | SAF
+    """
     from playwright.sync_api import sync_playwright
+    from bs4 import BeautifulSoup
+
+    # El grid en COMPR.AR usa este ID para los postbacks de paginación
+    GRID_ID = "ctl00$CPH1$GridListaPliegosAperturaProxima"
+    MAX_PAGES = 50
 
     nuevas = 0
     duplicados = 0
     omitidas = 0
 
+    def _extraer_filas(soup: BeautifulSoup) -> list:
+        tabla = (
+            soup.find("table", id=lambda x: x and "GridListaPliegos" in x)
+            or next(
+                (t for t in soup.find_all("table")
+                 if any("proceso" in th.get_text(strip=True).lower() for th in t.find_all("th"))),
+                None,
+            )
+        )
+        if not tabla:
+            return []
+        filas = []
+        for row in tabla.find_all("tr")[1:]:
+            cells = row.find_all("td")
+            if len(cells) < 5:
+                continue
+            texts = [c.get_text(" ", strip=True) for c in cells]
+            filas.append({
+                "numero_expediente": texts[0][:200],
+                "titulo": texts[1][:500],
+                "rubro": texts[2][:200],
+                "fecha_ap_raw": texts[3],
+                "estado_raw": texts[4],
+                "organismo": (texts[5] if len(texts) > 5 else "")[:300],
+            })
+        return filas
+
+    # ── Fase 1: recolección con Playwright (sin ORM) ──────────────────────
+    datos_crudos: list = []
+
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
+        )
+        pw_page = context.new_page()
 
         try:
-            page.goto("https://comprar.gob.ar/Compras.aspx?qs=W1HXHGHtH10%3D", timeout=60000)
-            page.wait_for_load_state("networkidle", timeout=30000)
+            pw_page.goto(fuente.url_base, timeout=60000)
+            pw_page.wait_for_load_state("networkidle", timeout=30000)
+            pw_page.wait_for_selector("table", timeout=20000)
 
-            # Esperar que aparezca la tabla
-            page.wait_for_selector("table", timeout=20000)
+            pagina_actual = 1
+            while pagina_actual <= MAX_PAGES:
+                soup = BeautifulSoup(pw_page.content(), "lxml")
+                filas = _extraer_filas(soup)
+                datos_crudos.extend(filas)
+                logger.info(f"COMPR.AR pág {pagina_actual}: {len(filas)} filas")
 
-            filas = page.query_selector_all("table tr")
-            logger.info(f"Filas encontradas: {len(filas)}")
-
-            for fila in filas[1:]:
-                celdas = fila.query_selector_all("td")
-                if len(celdas) < 3:
-                    continue
+                siguiente = pagina_actual + 1
+                tiene_siguiente = bool(soup.find("a", href=lambda h: h and f"Page${siguiente}" in h))
+                if not tiene_siguiente:
+                    break
 
                 try:
-                    titulo = celdas[1].inner_text().strip() if len(celdas) > 1 else ""
-                    organismo = celdas[2].inner_text().strip() if len(celdas) > 2 else ""
-                    estado_txt = celdas[3].inner_text().strip().lower() if len(celdas) > 3 else ""
+                    with pw_page.expect_navigation(timeout=20000):
+                        pw_page.evaluate(f"__doPostBack('{GRID_ID}', 'Page${siguiente}')")
+                    pw_page.wait_for_timeout(300)
+                    pagina_actual += 1
+                except Exception as exc:
+                    logger.warning(f"COMPR.AR: error navegando a pág {siguiente}: {exc}")
+                    break
 
-                    if not titulo:
-                        continue
-
-                    # Filtrar solo salud
-                    titulo_lower = titulo.lower()
-                    organismo_lower = organismo.lower()
-                    es_salud = any(k in titulo_lower or k in organismo_lower for k in KEYWORDS_SALUD)
-
-                    if not es_salud:
-                        omitidas += 1
-                        continue
-
-                    # Mapear estado
-                    if "abierta" in estado_txt or "vigente" in estado_txt:
-                        estado = "abierta"
-                    elif "adjudicada" in estado_txt:
-                        estado = "adjudicada"
-                    elif "cerrada" in estado_txt or "finalizada" in estado_txt:
-                        estado = "cerrada"
-                    else:
-                        estado = "desconocido"
-
-                    data = {
-                        "titulo": titulo[:500],
-                        "organismo": organismo[:300],
-                        "estado": estado,
-                        "provincia": "Nacional",
-                        "url_original": "https://comprar.gob.ar",
-                    }
-
-                    creada, dup = guardar_licitacion(data, fuente)
-                    if creada:
-                        nuevas += 1
-                    elif dup:
-                        duplicados += 1
-
-                except Exception as e:
-                    logger.warning(f"Error procesando fila: {e}")
-                    continue
-
+        except Exception as exc:
+            logger.error(f"COMPR.AR: error en Playwright: {exc}")
+            raise
         finally:
             browser.close()
 
-    logger.info(f"COMPR.AR: {nuevas} nuevas, {duplicados} duplicados, {omitidas} omitidas")
+    logger.info(f"COMPR.AR: {len(datos_crudos)} filas recolectadas, persistiendo...")
+
+    # ── Fase 2: filtro y persistencia con Django ORM ──────────────────────
+    _ESTADO_MAP = {
+        "abierta": "abierta",
+        "vigente": "abierta",
+        "apertura": "abierta",
+        "publicada": "abierta",
+        "adjudicada": "adjudicada",
+        "cerrada": "cerrada",
+        "finalizada": "cerrada",
+        "desierta": "cerrada",
+        "fracasada": "cerrada",
+        "suspendida": "suspendida",
+    }
+
+    for fila in datos_crudos:
+        titulo = fila.get("titulo", "")
+        if not titulo:
+            omitidas += 1
+            continue
+
+        titulo_lower = titulo.lower()
+        organismo_lower = fila.get("organismo", "").lower()
+        if not any(k in titulo_lower or k in organismo_lower for k in KEYWORDS_SALUD):
+            omitidas += 1
+            continue
+
+        estado_txt = fila["estado_raw"].lower()
+        estado = next((v for k, v in _ESTADO_MAP.items() if k in estado_txt), "desconocido")
+
+        try:
+            data = {
+                "titulo": titulo,
+                "organismo": fila["organismo"],
+                "estado": estado,
+                "provincia": "Nacional",
+                "numero_expediente": fila["numero_expediente"],
+                "url_original": fuente.url_base,
+                "fecha_apertura": _parse_fecha(fila["fecha_ap_raw"]),
+                "rubro": fila["rubro"],
+            }
+            creada, dup = guardar_licitacion(data, fuente)
+            if creada:
+                nuevas += 1
+            elif dup:
+                duplicados += 1
+        except Exception as exc:
+            logger.warning(f"COMPR.AR: error guardando fila: {exc}")
+            omitidas += 1
+
+    logger.info(f"COMPR.AR TOTAL: {nuevas} nuevas, {duplicados} duplicados, {omitidas} omitidas")
     return {"nuevas": nuevas, "duplicados": duplicados, "omitidas": omitidas}
 
 

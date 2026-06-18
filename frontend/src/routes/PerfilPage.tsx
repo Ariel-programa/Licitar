@@ -25,7 +25,7 @@ type PasswordData = z.infer<typeof schemaPassword>;
 
 export default function PerfilPage() {
   const qc = useQueryClient();
-  const { user, setAuth, token } = useAuthStore();
+  const { setAuth, token } = useAuthStore();
 
   const { data: perfil, isLoading } = useQuery({
     queryKey: ["me"],

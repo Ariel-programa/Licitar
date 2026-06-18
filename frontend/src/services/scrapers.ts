@@ -1,44 +1,37 @@
 import api from "@/lib/api";
 
-export interface FuenteScraping {
+export type FuenteScraping = {
   id: number;
   nombre: string;
   url_base: string;
   tipo: string;
   activa: boolean;
   ultimo_scraping: string | null;
-  created_at: string;
   ultimo_job: {
+    id: number;
     estado: string;
     total_nuevos: number;
-    finalizado_en: string | null;
     error_mensaje: string;
+    finalizado_en: string | null;
   } | null;
-}
+};
 
-export interface ScrapingJob {
-  id: number;
-  fuente: number;
-  fuente_nombre: string;
-  estado: "pendiente" | "corriendo" | "completado" | "fallido";
-  iniciado_en: string | null;
-  finalizado_en: string | null;
-  duracion_segundos: number | null;
-  total_encontrados: number;
-  total_nuevos: number;
-  total_duplicados: number;
-  error_mensaje: string;
-  created_at: string;
-}
+export type Schedule = {
+  habilitado: boolean;
+  intervalo_horas: number | null;
+  ultimo_run: string | null;
+};
 
-export const getFuentes = (): Promise<FuenteScraping[]> =>
-  api.get("/scrapers/fuentes/").then((r) => r.data.results ?? r.data);
+export const getFuentes = async (): Promise<FuenteScraping[]> =>
+  (await api.get("/scrapers/fuentes/")).data.results;
+export const getJobs = async () => (await api.get("/scrapers/jobs/")).data.results;
+export const ejecutarScraper = (id: number) => api.post(`/scrapers/fuentes/${id}/ejecutar/`);
+export const triggerFuente = (id: number) => api.post(`/scrapers/fuentes/${id}/ejecutar/`);
+export const triggerAll = () => api.post("/scrapers/fuentes/ejecutar-todas/");
+export const toggleFuente = (id: number, activa: boolean) =>
+  api.patch(`/scrapers/fuentes/${id}/`, { activa });
 
-export const getJobs = (): Promise<ScrapingJob[]> =>
-  api.get("/scrapers/jobs/").then((r) => r.data.results ?? r.data);
-
-export const triggerFuente = (id: number) =>
-  api.post(`/scrapers/fuentes/${id}/trigger/`).then((r) => r.data);
-
-export const triggerAll = () =>
-  api.post("/scrapers/fuentes/trigger-all/").then((r) => r.data);
+export const getSchedule = async (): Promise<Schedule> =>
+  (await api.get("/scrapers/schedule/")).data;
+export const updateSchedule = (data: Partial<Schedule>) =>
+  api.patch("/scrapers/schedule/", data);

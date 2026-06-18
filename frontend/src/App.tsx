@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./lib/authStore";
+import Toaster from "./components/Toaster";
 import LoginPage from "./routes/LoginPage";
 import DashboardPage from "./routes/DashboardPage";
 import LicitacionesPage from "./routes/LicitacionesPage";
@@ -13,6 +14,7 @@ import UsuariosPage from "./routes/UsuariosPage";
 import PerfilPage from "./routes/PerfilPage";
 import FavoritosPage from "./routes/FavoritosPage";
 import ResultadosScrapingPage from "./routes/ResultadosScrapingPage";
+import EstadisticasPage from "./routes/EstadisticasPage";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
@@ -22,6 +24,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
@@ -40,6 +43,7 @@ export default function App() {
           <Route path="licitaciones/:id/editar" element={<EditarLicitacionPage />} />
           <Route path="licitaciones/:id" element={<DetalleLicitacionPage />} />
           <Route path="resultados" element={<ResultadosScrapingPage />} />
+          <Route path="estadisticas" element={<EstadisticasPage />} />
           <Route path="alertas" element={<AlertasPage />} />
           <Route path="favoritos" element={<FavoritosPage />} />
           <Route path="perfil" element={<PerfilPage />} />

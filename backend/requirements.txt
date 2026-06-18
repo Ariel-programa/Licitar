@@ -28,6 +28,9 @@ pytesseract==0.3.13
 pypdf2==3.0.1
 pdfplumber==0.11.2
 
+# Google OAuth
+google-auth==2.30.0
+
 # Utils
 python-decouple==3.8
 django-filter==24.2
