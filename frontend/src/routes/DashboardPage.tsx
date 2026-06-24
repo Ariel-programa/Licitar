@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { getResumen } from "@/services/estadisticas";
 import Spinner from "@/components/Spinner";
-import { ClipboardList, FolderOpen, FolderClosed, Trophy, TrendingUp, MapPin } from "lucide-react";
+import { ClipboardList, FolderOpen, FolderClosed, Trophy, TrendingUp, MapPin, FileText } from "lucide-react";
 import { useAuthStore } from "@/lib/authStore";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 

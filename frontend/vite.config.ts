@@ -10,13 +10,16 @@ export default defineConfig({
     },
   },
   server: {
-    host: "0.0.0.0",
+    host: true,
     port: 5173,
-    proxy: {
-      "/api": {
-        target: "http://backend:8000",
-        changeOrigin: true,
-      },
+    allowedHosts: [
+      "localhost",
+      ".ngrok-free.dev",
+      ".ngrok-free.app",
+    ],
+    hmr: {
+      clientPort: 443,
+      protocol: "wss",
     },
   },
 });
