@@ -1,5 +1,53 @@
 [
 {
+  "model": "licitaciones.fuentescraping",
+  "pk": 1,
+  "fields": {
+    "nombre": "COMPR.AR - Portal Nacional",
+    "url_base": "https://comprar.gob.ar/Compras.aspx?qs=W1HXHGHtH10%3D",
+    "tipo": "portal",
+    "activa": true,
+    "ultimo_scraping": null,
+    "created_at": "2026-06-09T20:27:04.633Z"
+  }
+},
+{
+  "model": "licitaciones.fuentescraping",
+  "pk": 2,
+  "fields": {
+    "nombre": "Buenos Aires Compras (BAC)",
+    "url_base": "https://www.buenosairescompras.gob.ar",
+    "tipo": "portal",
+    "activa": true,
+    "ultimo_scraping": null,
+    "created_at": "2026-06-09T23:46:36.728Z"
+  }
+},
+{
+  "model": "licitaciones.fuentescraping",
+  "pk": 3,
+  "fields": {
+    "nombre": "BAC - Buenos Aires Compras",
+    "url_base": "https://www.buenosairescompras.gob.ar/PBAC/vistas/pu_proceso/pu_busqueda_proceso.aspx",
+    "tipo": "portal",
+    "activa": true,
+    "ultimo_scraping": null,
+    "created_at": "2026-06-16T17:18:11.298Z"
+  }
+},
+{
+  "model": "licitaciones.fuentescraping",
+  "pk": 4,
+  "fields": {
+    "nombre": "Seed Data",
+    "url_base": "https://comprar.gob.ar",
+    "tipo": "portal",
+    "activa": true,
+    "ultimo_scraping": null,
+    "created_at": "2026-06-16T22:08:28.338Z"
+  }
+},
+{
   "model": "licitaciones.licitacion",
   "pk": 13,
   "fields": {
